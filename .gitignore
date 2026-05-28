@@ -1,0 +1,35 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Compiled files
+dist/
+dist-ssr/
+*.local
+
+# Local Uploads Directory (Temporary stored files)
+uploads/
+
+# Environment variables & secrets
+.env
+.env.production
+.env.development
+.env.local
+.env.*.local
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# OS Files
+.DS_Store
+Thumbs.db
