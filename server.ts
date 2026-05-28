@@ -17,21 +17,23 @@ const server = http.createServer(app);
 if (process.env.NODE_ENV === "production") {
     // Production: Serve the compiled SPA static files from 'dist'
     app.use(express.static(path.resolve("dist")));
-    app.get("*", (req, res) => {
+    app.get(/.*/, (req, res) => {
         res.sendFile(path.resolve("dist/index.html"));
     });
 } else {
     // Development: Mount Vite dev server middleware
     console.log("Starting Vite server in development middleware mode...");
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-        server: {
-            middlewareMode: true,
-            hmr: server
-        },
-        appType: "spa",
-    });
-    app.use(vite.middlewares);
+    (async () => {
+        const { createServer: createViteServer } = await import("vite");
+        const vite = await createViteServer({
+            server: {
+                middlewareMode: true,
+                hmr: server
+            },
+            appType: "spa",
+        });
+        app.use(vite.middlewares);
+    })();
 }
 
 server.listen(port, "0.0.0.0", () => {
