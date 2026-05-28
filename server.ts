@@ -4,7 +4,7 @@ import express from "express";
 import apiRouter, { startPeriodicCleanup } from "./src/server/api";
 
 const app = express();
-const port = Number(process.env.APP_PORT) || 5000;
+const port = Number(process.env.PORT) || Number(process.env.APP_PORT) || 5000;
 
 // Mount modular API router
 app.use("/api", apiRouter);
