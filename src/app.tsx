@@ -39,7 +39,7 @@ const formatSize = (bytes: number): string => {
 // Format date helper
 const formatDate = (timestamp: number): string => {
     const date = new Date(timestamp);
-    return date.toLocaleDateString("id-ID", {
+    return date.toLocaleDateString("en-US", {
         day: "numeric",
         month: "long",
         year: "numeric",
@@ -136,7 +136,7 @@ function App() {
                 if (prev === null || prev <= 1000) {
                     clearInterval(countdownInterval);
                     setMetaError(
-                        "Berkas telah kedaluwarsa setelah melewati batas waktu 1 jam."
+                        "This file has expired after the 1-hour time limit."
                     );
                     return 0;
                 }
@@ -148,11 +148,11 @@ function App() {
     }, [timeLeft]);
 
     const formatTimeRemaining = (ms: number): string => {
-        if (ms <= 0) return "Kedaluwarsa";
+        if (ms <= 0) return "Expired";
         const totalSecs = Math.floor(ms / 1000);
         const mins = Math.floor(totalSecs / 60);
         const secs = totalSecs % 60;
-        return `${mins} menit ${secs} detik`;
+        return `${mins}m ${secs}s`;
     };
 
     // Routing check on pathname change
@@ -203,17 +203,17 @@ function App() {
             if (!res.ok) {
                 if (res.status === 404) {
                     throw new Error(
-                        "Berkas tidak ditemukan atau tautan sudah kedaluwarsa."
+                        "File not found or the link has expired."
                     );
                 }
-                throw new Error("Gagal mengambil informasi berkas.");
+                throw new Error("Failed to retrieve file information.");
             }
             const data = await res.json();
             setDownloadMeta(data);
         } catch (err: any) {
             console.error(err);
             setMetaError(
-                err.message || "Terjadi kesalahan saat memuat berkas."
+                err.message || "An error occurred while loading the file."
             );
         } finally {
             setIsLoadingMeta(false);
@@ -230,9 +230,6 @@ function App() {
         setTimeout(() => {
             if (downloadMeta.deleteAfterDownload) {
                 navigateTo("/");
-                alert(
-                    "Berkas telah terunduh dan otomatis terhapus selamanya dari server!"
-                );
             } else if (activeFileId) {
                 fetchFileMetadata(activeFileId);
             }
@@ -248,19 +245,19 @@ function App() {
                 method: "DELETE",
             });
             if (!res.ok) {
-                throw new Error("Gagal menghapus berkas dari server.");
+                throw new Error("Failed to delete the file from the server.");
             }
             setShowDeleteConfirm(false);
             if (redirectHome) {
                 navigateTo("/");
             } else {
                 setDownloadMeta(null);
-                setMetaError("Berkas telah berhasil dihapus secara permanen.");
+                setMetaError("The file has been permanently deleted.");
             }
         } catch (err: any) {
             console.error(err);
             setDeleteError(
-                err.message || "Terjadi kesalahan saat menghapus berkas."
+                err.message || "An error occurred while deleting the file."
             );
         } finally {
             setIsDeleting(false);
@@ -288,20 +285,20 @@ function App() {
                         </h1>
                     </button>
                     <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
-                        Bagi berkas secara instan dengan aman. Ringkas, cepat,
-                        dan mudah digunakan kapan saja.
+                        Share files instantly and securely. Simple, fast,
+                        and easy to use anytime.
                     </p>
                 </header>
 
                 <Card className="shadow-md border-border/80">
                     <CardHeader className="pb-4">
                         <CardTitle className="text-xl font-bold">
-                            {viewMode === "upload" ? "Unggah Berkas" : "Unduh Berkas"}
+                            {viewMode === "upload" ? "Upload File" : "Download File"}
                         </CardTitle>
                         <CardDescription className="text-xs">
                             {viewMode === "upload"
-                                ? "Pilih atau seret berkas Anda ke area di bawah untuk memulai."
-                                : "Informasi penerimaan berkas aman yang dibagikan kepada Anda."}
+                                ? "Select or drag your file to the area below to get started."
+                                : "Details of the secure file shared with you."}
                         </CardDescription>
                     </CardHeader>
 
@@ -331,7 +328,7 @@ function App() {
                                         <div className="py-12 flex flex-col items-center justify-center text-center">
                                             <div className="w-8 h-8 border-3 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />
                                             <p className="text-xs text-muted-foreground">
-                                                Memuat rincian berkas dari server...
+                                                Loading file details from the server...
                                             </p>
                                         </div>
                                     ) : metaError ? (
@@ -340,17 +337,17 @@ function App() {
                                                 <AlertCircle className="w-6 h-6" />
                                             </div>
                                             <h3 className="text-base font-bold text-foreground mb-2">
-                                                Gagal Menemukan Berkas
+                                                File Not Found
                                             </h3>
                                             <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-6 leading-relaxed">
-                                                {metaError} Tautan mungkin salah ketik
-                                                atau pemilik telah menghapus berkas ini.
+                                                {metaError} The link may be mistyped
+                                                or the owner has deleted this file.
                                             </p>
                                             <button
                                                 onClick={() => navigateTo("/")}
                                                 className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm cursor-pointer"
                                             >
-                                                Buka Halaman Utama
+                                                Go to Home Page
                                             </button>
                                         </div>
                                     ) : (
@@ -358,14 +355,14 @@ function App() {
                                             <div>
                                                 <div className="flex items-center justify-between pb-3 border-b border-border/80 mb-5">
                                                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                                        Tanda Terima Berkas
+                                                        File Receipt
                                                     </span>
                                                     <button
                                                         onClick={() => navigateTo("/")}
                                                         className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline cursor-pointer"
                                                     >
                                                         <ArrowLeft className="w-3 h-3" />
-                                                        Aplikasi Utama
+                                                        Home
                                                     </button>
                                                 </div>
 
@@ -387,7 +384,7 @@ function App() {
                                                     <div className="flex justify-between py-1.5 border-b border-muted">
                                                         <span className="text-muted-foreground flex items-center gap-1.5">
                                                             <Clock className="w-3.5 h-3.5 text-primary" />
-                                                            Tanggal Unggah
+                                                            Upload Date
                                                         </span>
                                                         <span className="font-semibold text-foreground">
                                                             {formatDate(downloadMeta.uploadedAt)}
@@ -397,10 +394,10 @@ function App() {
                                                     <div className="flex justify-between py-1.5 border-b border-muted">
                                                         <span className="text-muted-foreground flex items-center gap-1.5">
                                                             <Eye className="w-3.5 h-3.5 text-primary" />
-                                                            Diunduh Sebanyak
+                                                            Downloaded
                                                         </span>
                                                         <span className="font-mono font-semibold text-foreground">
-                                                            {downloadMeta.downloadsCount} kali
+                                                            {downloadMeta.downloadsCount} time{downloadMeta.downloadsCount !== 1 ? "s" : ""}
                                                         </span>
                                                     </div>
 
@@ -408,7 +405,7 @@ function App() {
                                                         <div className="flex justify-between py-1.5 border-b border-muted">
                                                             <span className="text-destructive flex items-center gap-1.5 font-semibold">
                                                                 <Clock className="w-3.5 h-3.5 text-destructive" />
-                                                                Kedaluwarsa Dalam
+                                                                Expires In
                                                             </span>
                                                             <span className="font-semibold text-destructive font-mono">
                                                                 {formatTimeRemaining(timeLeft)}
@@ -423,9 +420,9 @@ function App() {
                                                         <Clock className="w-4 h-4 shrink-0 mt-0.5" />
                                                         <div>
                                                             <span className="font-bold block mb-0.5">
-                                                                Masa Penyimpanan Berkas Terbatas
+                                                                Limited Storage Time
                                                             </span>
-                                                            Berkas ini disimpan sementara dan akan dihapus selamanya dari server dalam{" "}
+                                                            This file is stored temporarily and will be permanently deleted from the server in{" "}
                                                             <span className="font-mono font-bold text-foreground">
                                                                 {formatTimeRemaining(timeLeft)}
                                                             </span>.
@@ -438,9 +435,9 @@ function App() {
                                                         <Clock className="w-4 h-4 shrink-0 mt-0.5" />
                                                         <div>
                                                             <span className="font-bold block mb-0.5">
-                                                                Opsi Sekali Unduh Aktif
+                                                                One-Time Download Active
                                                             </span>
-                                                            Berkas ini akan otomatis terhapus selamanya dari server segera setelah Anda mengundunya. Pastikan unduhan Anda selesai dengan sukses.
+                                                            This file will be permanently deleted from the server immediately after you download it. Make sure your download completes successfully.
                                                         </div>
                                                     </div>
                                                 )}
@@ -451,7 +448,7 @@ function App() {
                                                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                                                 >
                                                     <Download className="w-4 h-4" />
-                                                    Unduh Berkas Sekarang
+                                                    Download File Now
                                                 </button>
 
                                                 {/* Download triggered toast */}
@@ -463,7 +460,7 @@ function App() {
                                                     >
                                                         <CheckCircle className="w-4 h-4" />
                                                         <span>
-                                                            Unduhan sedang berjalan. Silakan periksa peramban Anda!
+                                                            Download started. Please check your browser!
                                                         </span>
                                                     </motion.div>
                                                 )}
@@ -473,10 +470,10 @@ function App() {
                                                     {showDeleteConfirm ? (
                                                         <div className="w-full p-3 bg-destructive/5 border border-destructive/20 rounded-xl text-left">
                                                             <p className="text-xs font-semibold text-destructive mb-1">
-                                                                Konfirmasi Hapus Permanen
+                                                                Confirm Permanent Deletion
                                                             </p>
                                                             <p className="text-[10px] text-muted-foreground leading-relaxed mb-3">
-                                                                Apakah Anda yakin ingin menghapus berkas ini secara permanen dari server? Berkas tidak akan dapat diunduh kembali.
+                                                                Are you sure you want to permanently delete this file from the server? It will no longer be available for download.
                                                             </p>
                                                             <div className="flex gap-2">
                                                                 <button
@@ -484,13 +481,13 @@ function App() {
                                                                     disabled={isDeleting}
                                                                     className="px-3 py-1.5 bg-destructive hover:bg-destructive/95 text-destructive-foreground text-[10px] font-semibold rounded-lg shrink-0 transition-colors disabled:opacity-50 cursor-pointer"
                                                                 >
-                                                                    {isDeleting ? "Menghapus..." : "Ya, Hapus Sekarang"}
+                                                                    {isDeleting ? "Deleting..." : "Yes, Delete Now"}
                                                                 </button>
                                                                 <button
                                                                     onClick={() => setShowDeleteConfirm(false)}
                                                                     className="px-3 py-1.5 bg-muted hover:bg-muted/80 text-muted-foreground text-[10px] font-semibold rounded-lg transition-colors cursor-pointer"
                                                                 >
-                                                                    Batal
+                                                                    Cancel
                                                                 </button>
                                                             </div>
                                                             {deleteError && (
@@ -504,7 +501,7 @@ function App() {
                                                             onClick={() => setShowDeleteConfirm(true)}
                                                             className="text-[10px] text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
                                                         >
-                                                            Hapus berkas ini dari server secara permanen
+                                                            Delete this file from the server permanently
                                                         </button>
                                                     )}
                                                 </div>

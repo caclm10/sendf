@@ -119,7 +119,7 @@ function Dropzone() {
                     setQrCodeUrl(url);
                 })
                 .catch((err) => {
-                    console.error("Gagal menghasilkan QR Code:", err);
+                    console.error("Failed to generate QR Code:", err);
                 });
         } else {
             setQrCodeUrl("");
@@ -132,7 +132,7 @@ function Dropzone() {
 
         // Max size: 200MB limit explicitly
         if (file.size > 200 * 1024 * 1024) {
-            setUploadError("Ukuran berkas melebihi batas maksimum 200 MB.");
+            setUploadError("File size exceeds the 200 MB limit.");
             setSelectedFile(null);
             return;
         }
@@ -172,18 +172,18 @@ function Dropzone() {
                     if (res.success) {
                         setUploadedMeta(res.metadata);
                     } else {
-                        setUploadError(res.error || "Gagal mengunggah berkas.");
+                        setUploadError(res.error || "Failed to upload file.");
                     }
                 } catch (err) {
-                    setUploadError("Gagal memproses respons server.");
+                    setUploadError("Failed to process server response.");
                 }
             } else {
                 try {
                     const res = JSON.parse(xhr.responseText);
-                    setUploadError(res.error || "Gagal mengunggah berkas.");
+                    setUploadError(res.error || "Failed to upload file.");
                 } catch (err) {
                     setUploadError(
-                        `Terjadi kesalahan server (Kode status: ${xhr.status}).`,
+                        `A server error occurred (Status code: ${xhr.status}).`,
                     );
                 }
             }
@@ -192,7 +192,7 @@ function Dropzone() {
         xhr.onerror = () => {
             setIsUploading(false);
             setUploadError(
-                "Sambungan terputus. Pastikan koneksi internet Anda stabil.",
+                "Connection lost. Please ensure your internet connection is stable.",
             );
         };
 
@@ -207,7 +207,7 @@ function Dropzone() {
                 method: "DELETE",
             });
             if (!res.ok) {
-                throw new Error("Gagal menghapus berkas dari server.");
+                throw new Error("Failed to delete the file from the server.");
             }
             setShowDeleteConfirm(false);
             if (redirectHome) {
@@ -216,53 +216,32 @@ function Dropzone() {
         } catch (err: any) {
             console.error(err);
             setDeleteError(
-                err.message || "Terjadi kesalahan saat menghapus berkas.",
+                err.message || "An error occurred while deleting the file.",
             );
         } finally {
             setIsDeleting(false);
         }
     };
 
-    const handleCopyBoth = async () => {
-        if (!uploadedMeta || !qrCodeUrl) return;
+    const handleCopyLink = async () => {
+        if (!uploadedMeta) return;
         const fullShareLink = `${window.location.origin}/${uploadedMeta.id}`;
 
         try {
-            const response = await fetch(qrCodeUrl);
-            const blob = await response.blob();
-
-            const data = [
-                new ClipboardItem({
-                    "text/plain": new Blob([fullShareLink], {
-                        type: "text/plain",
-                    }),
-                    "image/png": blob,
-                }),
-            ];
-            await navigator.clipboard.write(data);
+            await navigator.clipboard.writeText(fullShareLink);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
-            console.error(
-                "Gagal mencetak item rich clipboard, mencoba fallback teks biasa:",
-                err,
-            );
-            navigator.clipboard
-                .writeText(fullShareLink)
-                .then(() => {
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                })
-                .catch(() => {
-                    const text_area = document.createElement("textarea");
-                    text_area.value = fullShareLink;
-                    document.body.appendChild(text_area);
-                    text_area.select();
-                    document.execCommand("copy");
-                    document.body.removeChild(text_area);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                });
+            console.error("Failed to copy link:", err);
+            // Fallback for older browsers
+            const text_area = document.createElement("textarea");
+            text_area.value = fullShareLink;
+            document.body.appendChild(text_area);
+            text_area.select();
+            document.execCommand("copy");
+            document.body.removeChild(text_area);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
         }
     };
 
@@ -324,19 +303,19 @@ function Dropzone() {
 
                             <p className="text-sm font-medium text-foreground mb-1">
                                 {isDragging
-                                    ? "Lepaskan berkas sekarang..."
-                                    : "Seret & letakkan berkas di sini"}
+                                    ? "Drop your file now..."
+                                    : "Drag & drop your file here"}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                                atau{" "}
+                                or{" "}
                                 <span className="text-primary underline font-medium">
-                                    pilih berkas manual
+                                    browse files
                                 </span>{" "}
-                                dari komputer
+                                from your computer
                             </p>
                             <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-muted-foreground rounded-md text-[11px] font-medium">
                                 <HardDrive className="w-3.5 h-3.5 text-primary" />
-                                Maks. ukuran berkas: 200 MB
+                                Max file size: 200 MB
                             </div>
                         </div>
 
@@ -351,7 +330,7 @@ function Dropzone() {
                                 <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
                                 <div>
                                     <span className="font-semibold block mb-0.5">
-                                        Kesalahan
+                                        Error
                                     </span>
                                     {uploadError}
                                 </div>
@@ -379,7 +358,7 @@ function Dropzone() {
                                         </p>
                                         <p className="text-[11px] text-muted-foreground mt-0.5">
                                             {formatSize(selectedFile.size)} •{" "}
-                                            {selectedFile.type || "Berkas Mentah"}
+                                            {selectedFile.type || "Raw File"}
                                         </p>
                                     </div>
                                 </div>
@@ -400,9 +379,9 @@ function Dropzone() {
                                             htmlFor="delete-on-download-checkbox"
                                             className="text-xs font-medium text-foreground select-none cursor-pointer"
                                         >
-                                            Hapus otomatis setelah diunduh pertama kali
+                                            Auto-delete after first download
                                             <span className="block text-[10px] text-muted-foreground font-normal mt-0.5 leading-relaxed">
-                                                Berkas akan langsung dihapus selamanya dari server setelah pertama kali diunduh oleh si penerima.
+                                                The file will be permanently deleted from the server after it is downloaded for the first time.
                                             </span>
                                         </label>
                                     </div>
@@ -412,7 +391,7 @@ function Dropzone() {
                                 {isUploading ? (
                                     <div id="progress-container">
                                         <div className="flex justify-between text-[11px] font-semibold text-muted-foreground mb-1">
-                                            <span>Mengunggah...</span>
+                                            <span>Uploading...</span>
                                             <span>{uploadProgress}%</span>
                                         </div>
                                         <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
@@ -429,7 +408,7 @@ function Dropzone() {
                                         className="w-full mt-1 bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                                     >
                                         <Upload className="w-4 h-4" />
-                                        Unggah Berkas Baru
+                                        Upload File
                                     </button>
                                 )}
                             </motion.div>
@@ -451,10 +430,10 @@ function Dropzone() {
                         </div>
 
                         <h3 className="text-lg font-bold text-foreground mb-1">
-                            Berkas Berhasil Diunggah!
+                            File Uploaded Successfully!
                         </h3>
                         <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-4">
-                            Bagikan tautan rahasia atau kode QR di bawah ini untuk segera diunduh penerima.
+                            Share the secret link or QR code below for the recipient to download.
                         </p>
 
                         {/* File details card */}
@@ -467,7 +446,7 @@ function Dropzone() {
                                     {uploadedMeta.name}
                                 </p>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                                    Ukuran: {formatSize(uploadedMeta.size)}
+                                    Size: {formatSize(uploadedMeta.size)}
                                 </p>
                             </div>
                         </div>
@@ -479,19 +458,19 @@ function Dropzone() {
                                     <img
                                         id="qr-code-image"
                                         src={qrCodeUrl}
-                                        alt="QR Code Tautan Instan"
+                                        alt="Download QR Code"
                                         className="w-32 h-32 select-none"
                                         referrerPolicy="no-referrer"
                                     />
                                 </div>
                                 <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1.5 font-medium">
                                     <QrIcon className="w-3.5 h-3.5 text-primary" />
-                                    Pindai dengan kamera HP untuk mengunduh
+                                    Scan with your phone camera to download
                                 </p>
                             </div>
                         ) : (
                             <div className="my-5 w-32 h-32 border border-dashed border-border rounded-2xl flex items-center justify-center text-xs text-muted-foreground mx-auto">
-                                Memuat QR...
+                                Loading QR...
                             </div>
                         )}
 
@@ -499,7 +478,7 @@ function Dropzone() {
                         <div className="space-y-3.5 max-w-sm mx-auto">
                             <div>
                                 <label className="block text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                                    Tautan Pengunduhan
+                                    Download Link
                                 </label>
                                 <input
                                     id="copy-link-input"
@@ -512,7 +491,7 @@ function Dropzone() {
 
                             <button
                                 id="copy-both-btn"
-                                onClick={handleCopyBoth}
+                                onClick={handleCopyLink}
                                 className={`w-full py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-2 shadow-sm cursor-pointer ${
                                     copied
                                         ? "bg-emerald-600 hover:bg-emerald-650 text-white"
@@ -522,12 +501,12 @@ function Dropzone() {
                                 {copied ? (
                                     <>
                                         <Check className="w-4 h-4" />
-                                        <span>Tautan & Kode QR Berhasil Disalin!</span>
+                                        <span>Link Copied!</span>
                                     </>
                                 ) : (
                                     <>
                                         <Copy className="w-4 h-4" />
-                                        <span>Salin Tautan & Kode QR</span>
+                                        <span>Copy Link</span>
                                     </>
                                 )}
                             </button>
@@ -541,7 +520,7 @@ function Dropzone() {
                                 className="w-full bg-card hover:bg-muted text-foreground border border-border py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                             >
                                 <ArrowLeft className="w-3.5 h-3.5" />
-                                Kirim Berkas Lainnya
+                                Send Another File
                             </button>
 
                             {/* Control & Security Deletion panel */}
@@ -549,17 +528,17 @@ function Dropzone() {
                                 <div className="flex items-center gap-1.5 mb-1.5">
                                     <Trash2 className="w-4 h-4 text-destructive" />
                                     <span className="text-xs font-bold text-destructive">
-                                        Kendali Pengirim & Keamanan
+                                        Sender Controls & Security
                                     </span>
                                 </div>
                                 <p className="text-[10px] text-muted-foreground leading-relaxed mb-3">
-                                    Sebagai pengirim, Anda memiliki kontrol penuh atas berkas ini. Anda dapat menghapusnya saat ini juga tanpa perlu menunggu waktu kedaluwarsa atau unduhan pertama.
+                                    As the sender, you have full control over this file. You can delete it right now without waiting for expiration or the first download.
                                 </p>
 
                                 {showDeleteConfirm ? (
                                     <div className="space-y-2 bg-card/90 p-2.5 border border-destructive/20 rounded-lg">
                                         <p className="text-[10px] font-semibold text-destructive leading-normal">
-                                            Apakah Anda yakin? Berkas akan langsung terhapus secara permanen dari server dan tidak dapat diakses lagi.
+                                            Are you sure? The file will be permanently deleted from the server and will no longer be accessible.
                                         </p>
                                         <div className="flex gap-2">
                                             <button
@@ -567,13 +546,13 @@ function Dropzone() {
                                                 disabled={isDeleting}
                                                 className="px-3 py-1.5 bg-destructive hover:bg-destructive/95 text-destructive-foreground text-[10px] font-bold rounded-lg shrink-0 transition-colors disabled:opacity-50 cursor-pointer"
                                             >
-                                                {isDeleting ? "Menghapus..." : "Ya, Hapus Sekarang"}
+                                                {isDeleting ? "Deleting..." : "Yes, Delete Now"}
                                             </button>
                                             <button
                                                 onClick={() => setShowDeleteConfirm(false)}
                                                 className="px-3 py-1.5 bg-muted hover:bg-muted/80 text-muted-foreground text-[10px] font-semibold rounded-lg transition-colors cursor-pointer"
                                             >
-                                                Batal
+                                                Cancel
                                             </button>
                                         </div>
                                     </div>
@@ -582,7 +561,7 @@ function Dropzone() {
                                         onClick={() => setShowDeleteConfirm(true)}
                                         className="w-full bg-card hover:bg-destructive/5 text-destructive border border-destructive/20 py-2 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                                     >
-                                        Hapus Berkas dari Server Selamanya
+                                        Delete File from Server Permanently
                                     </button>
                                 )}
 
