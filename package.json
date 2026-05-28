@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "dotenvx run -- tsx watch server.ts",
+    "build": "vite build",
+    "start": "NODE_ENV=production tsx server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
