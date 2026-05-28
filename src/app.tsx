@@ -16,6 +16,8 @@ import {
     Eye,
     Trash2,
     Paperclip,
+    Smartphone,
+    Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Dropzone } from "@app/components/dropzone";
@@ -113,6 +115,10 @@ function App() {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
+
+    // Save to gallery states
+    const [isSavingToGallery, setIsSavingToGallery] = useState(false);
+    const [canShareFiles, setCanShareFiles] = useState(false);
 
     // Sync timeLeft with downloadMeta
     useEffect(() => {
@@ -234,6 +240,58 @@ function App() {
                 fetchFileMetadata(activeFileId);
             }
         }, 2000);
+    };
+
+    // Check if file is image or video
+    const isMediaFile = (type: string | undefined): boolean => {
+        if (!type) return false;
+        return type.startsWith("image/") || type.startsWith("video/");
+    };
+
+    // Check if browser supports sharing files (iOS Safari 15+, Chrome Android)
+    useEffect(() => {
+        if (downloadMeta && isMediaFile(downloadMeta.type) && navigator.canShare) {
+            const testFile = new File(["test"], "test.png", { type: "image/png" });
+            setCanShareFiles(navigator.canShare({ files: [testFile] }));
+        } else {
+            setCanShareFiles(false);
+        }
+    }, [downloadMeta]);
+
+    // Save to gallery via Web Share API (fetches from /download, triggers one-time delete)
+    const handleSaveToGallery = async () => {
+        if (!downloadMeta) return;
+        setIsSavingToGallery(true);
+
+        try {
+            const res = await fetch(`/api/files/${downloadMeta.id}/download`);
+            if (!res.ok) throw new Error("Failed to fetch file.");
+
+            const blob = await res.blob();
+            const file = new File([blob], downloadMeta.name, {
+                type: downloadMeta.type || "application/octet-stream",
+            });
+
+            await navigator.share({ files: [file] });
+
+            // If deleteAfterDownload, redirect home since file is now gone
+            if (downloadMeta.deleteAfterDownload) {
+                setTimeout(() => navigateTo("/"), 1000);
+            } else if (activeFileId) {
+                fetchFileMetadata(activeFileId);
+            }
+        } catch (err: any) {
+            // User cancelled share sheet — that's fine, file was already fetched
+            if (err.name !== "AbortError") {
+                console.error("Save to gallery failed:", err);
+            }
+            // Still redirect for one-time download since the fetch already triggered deletion
+            if (downloadMeta.deleteAfterDownload) {
+                setTimeout(() => navigateTo("/"), 1000);
+            }
+        } finally {
+            setIsSavingToGallery(false);
+        }
     };
 
     // Manual delete file execution
@@ -450,6 +508,32 @@ function App() {
                                                     <Download className="w-4 h-4" />
                                                     Download File Now
                                                 </button>
+
+                                                {/* Save to Gallery button — only for image/video + browser supports share */}
+                                                {isMediaFile(downloadMeta.type) && canShareFiles && (
+                                                    <>
+                                                        <button
+                                                            onClick={handleSaveToGallery}
+                                                            disabled={isSavingToGallery}
+                                                            className="w-full mt-2.5 bg-card hover:bg-muted text-foreground border border-border py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
+                                                        >
+                                                            {isSavingToGallery ? (
+                                                                <>
+                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                    Preparing...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Smartphone className="w-4 h-4" />
+                                                                    Save to Gallery
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                        <p className="text-[10px] text-muted-foreground text-center mt-1 leading-relaxed">
+                                                            Opens the share menu — tap <span className="font-semibold">"Save {downloadMeta.type?.startsWith("image/") ? "Image" : "Video"}"</span> to save to your gallery.
+                                                        </p>
+                                                    </>
+                                                )}
 
                                                 {/* Download triggered toast */}
                                                 {downloadSuccessMessage && (

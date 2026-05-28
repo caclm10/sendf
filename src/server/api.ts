@@ -97,7 +97,7 @@ router.post(
 
             if (!body || body.length === 0) {
                 res.status(400).json({
-                    error: "Data file kosong atau tidak valid.",
+                    error: "File data is empty or invalid.",
                 });
                 return;
             }
@@ -131,7 +131,7 @@ router.post(
         } catch (err: any) {
             console.error("Error during upload:", err);
             res.status(500).json({
-                error: "Gagal mengunggah file ke server: " + err.message,
+                error: "Failed to upload file: " + err.message,
             });
         }
     }
@@ -146,7 +146,7 @@ router.get("/files/:id/meta", async (req, res) => {
         const isCleaned = checkAndCleanFile(id);
         if (isCleaned) {
             res.status(404).json({
-                error: "Berkas ini telah kedaluwarsa setelah melewati batas waktu 1 jam.",
+                error: "This file has expired after the 1-hour time limit.",
             });
             return;
         }
@@ -155,7 +155,7 @@ router.get("/files/:id/meta", async (req, res) => {
 
         if (!fs.existsSync(metaPath)) {
             res.status(404).json({
-                error: "File tidak ditemukan atau tautan sudah kedaluwarsa.",
+                error: "File not found or the link has expired.",
             });
             return;
         }
@@ -176,7 +176,7 @@ router.get("/files/:id/meta", async (req, res) => {
         });
     } catch (err: any) {
         console.error("Error fetching file meta:", err);
-        res.status(500).json({ error: "Gagal memuat informasi file." });
+        res.status(500).json({ error: "Failed to load file information." });
     }
 });
 
@@ -200,17 +200,17 @@ router.delete("/files/:id", async (req, res) => {
         if (deleted) {
             res.json({
                 success: true,
-                message: "Berkas berhasil dihapus secara permanen.",
+                message: "File has been permanently deleted.",
             });
         } else {
             res.status(404).json({
-                error: "Berkas tidak ditemukan atau sudah dihapus.",
+                error: "File not found or already deleted.",
             });
         }
     } catch (err: any) {
         console.error("Error manual deletion:", err);
         res.status(500).json({
-            error: "Gagal menghapus berkas: " + err.message,
+            error: "Failed to delete file: " + err.message,
         });
     }
 });
@@ -224,7 +224,7 @@ router.get("/files/:id/download", async (req, res) => {
         const isCleaned = checkAndCleanFile(id);
         if (isCleaned) {
             res.status(410).send(
-                "Maaf, file ini telah kedaluwarsa setelah melewati batas waktu 1 jam."
+                "Sorry, this file has expired after the 1-hour time limit."
             );
             return;
         }
@@ -234,7 +234,7 @@ router.get("/files/:id/download", async (req, res) => {
 
         if (!fs.existsSync(filePath) || !fs.existsSync(metaPath)) {
             res.status(404).send(
-                "Maaf, file ini tidak ditemukan atau tautan sudah kedaluwarsa."
+                "Sorry, this file was not found or the link has expired."
             );
             return;
         }
@@ -281,7 +281,7 @@ router.get("/files/:id/download", async (req, res) => {
         fileStream.pipe(res);
     } catch (err: any) {
         console.error("Error streaming file download:", err);
-        res.status(500).send("Terjadi kesalahan saat mengunduh file.");
+        res.status(500).send("An error occurred while downloading the file.");
     }
 });
 
