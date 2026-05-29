@@ -99,8 +99,10 @@ router.post(
                 return;
             }
 
-            // Generate a secure short code (6 bytes -> 12 hex characters)
-            const fileId = crypto.randomBytes(6).toString("hex");
+            // Generate a secure short code (6 alphanumeric characters)
+            const fileId = Array.from(crypto.randomBytes(6))
+                .map((b) => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36])
+                .join("");
             const filePath = path.join(UPLOADS_DIR, fileId);
             const metaPath = path.join(UPLOADS_DIR, `${fileId}.json`);
 

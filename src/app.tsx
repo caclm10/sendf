@@ -166,10 +166,10 @@ function App() {
         const path = window.location.pathname;
         const pathSegments = path.split("/").filter(Boolean);
 
-        // Matches 12-char hex fileId (e.g. crypto randomBytes(6) -> hex)
+        // Matches 6-char alphanumeric or legacy 12-char hex fileId
         if (
             pathSegments.length === 1 &&
-            /^[0-9a-f]{12}$/i.test(pathSegments[0])
+            /^([0-9a-z]{6}|[0-9a-z]{12})$/i.test(pathSegments[0])
         ) {
             const fileId = pathSegments[0];
             setActiveFileId(fileId);
