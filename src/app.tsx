@@ -234,11 +234,7 @@ function App() {
         setDownloadSuccessMessage(true);
 
         setTimeout(() => {
-            if (downloadMeta.deleteAfterDownload) {
-                navigateTo("/");
-            } else if (activeFileId) {
-                fetchFileMetadata(activeFileId);
-            }
+            navigateTo("/");
         }, 2000);
     };
 
@@ -274,21 +270,15 @@ function App() {
 
             await navigator.share({ files: [file] });
 
-            // If deleteAfterDownload, redirect home since file is now gone
-            if (downloadMeta.deleteAfterDownload) {
-                setTimeout(() => navigateTo("/"), 1000);
-            } else if (activeFileId) {
-                fetchFileMetadata(activeFileId);
-            }
+            // Redirect home since file is now deleted from server
+            setTimeout(() => navigateTo("/"), 1000);
         } catch (err: any) {
             // User cancelled share sheet — that's fine, file was already fetched
             if (err.name !== "AbortError") {
                 console.error("Save to gallery failed:", err);
             }
-            // Still redirect for one-time download since the fetch already triggered deletion
-            if (downloadMeta.deleteAfterDownload) {
-                setTimeout(() => navigateTo("/"), 1000);
-            }
+            // Still redirect since the fetch already triggered deletion
+            setTimeout(() => navigateTo("/"), 1000);
         } finally {
             setIsSavingToGallery(false);
         }
@@ -459,46 +449,19 @@ function App() {
                                                         </span>
                                                     </div>
 
-                                                    {!downloadMeta.deleteAfterDownload && timeLeft !== null && (
-                                                        <div className="flex justify-between py-1.5 border-b border-muted">
-                                                            <span className="text-destructive flex items-center gap-1.5 font-semibold">
-                                                                <Clock className="w-3.5 h-3.5 text-destructive" />
-                                                                Expires In
-                                                            </span>
-                                                            <span className="font-semibold text-destructive font-mono">
-                                                                {formatTimeRemaining(timeLeft)}
-                                                            </span>
-                                                        </div>
-                                                    )}
+
                                                 </div>
 
-                                                {/* Expiration warnings */}
-                                                {!downloadMeta.deleteAfterDownload && timeLeft !== null && (
-                                                    <div className="mb-5 p-3.5 bg-primary/5 border border-primary/20 rounded-xl text-left flex items-start gap-2.5 text-xs text-primary leading-relaxed">
-                                                        <Clock className="w-4 h-4 shrink-0 mt-0.5" />
-                                                        <div>
-                                                            <span className="font-bold block mb-0.5">
-                                                                Limited Storage Time
-                                                            </span>
-                                                            This file is stored temporarily and will be permanently deleted from the server in{" "}
-                                                            <span className="font-mono font-bold text-foreground">
-                                                                {formatTimeRemaining(timeLeft)}
-                                                            </span>.
-                                                        </div>
+                                                {/* Auto-delete notice */}
+                                                <div className="mb-5 p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-left flex items-start gap-2.5 text-xs text-amber-850 dark:text-amber-300 leading-relaxed">
+                                                    <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+                                                    <div>
+                                                        <span className="font-bold block mb-0.5">
+                                                            Auto-Delete After Download
+                                                        </span>
+                                                        This file will be permanently deleted from the server once you download it. Make sure your download completes successfully.
                                                     </div>
-                                                )}
-
-                                                {downloadMeta.deleteAfterDownload && (
-                                                    <div className="mb-5 p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-left flex items-start gap-2.5 text-xs text-amber-850 dark:text-amber-300 leading-relaxed">
-                                                        <Clock className="w-4 h-4 shrink-0 mt-0.5" />
-                                                        <div>
-                                                            <span className="font-bold block mb-0.5">
-                                                                One-Time Download Active
-                                                            </span>
-                                                            This file will be permanently deleted from the server immediately after you download it. Make sure your download completes successfully.
-                                                        </div>
-                                                    </div>
-                                                )}
+                                                </div>
 
                                                 {/* Download Button */}
                                                 <button

@@ -23,23 +23,21 @@ const checkAndCleanFile = (id: string): boolean => {
 
     try {
         const meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
-        // If not deleteAfterDownload (which unlinks instantly on download), it expires strictly after 1 hour
-        if (!meta.deleteAfterDownload) {
-            const elapsed = Date.now() - meta.uploadedAt;
-            if (elapsed > EXPIRATION_TIME) {
-                if (fs.existsSync(filePath)) {
-                    fs.unlinkSync(filePath);
-                }
-                if (fs.existsSync(metaPath)) {
-                    fs.unlinkSync(metaPath);
-                }
-                console.log(
-                    `[Auto-Clean] Successfully purged expired file ${id} (elapsed: ${Math.round(
-                        elapsed / 60000
-                    )} minutes)`
-                );
-                return true; // Was expired and cleaned up
+        // Safety net: files that weren't downloaded get cleaned up after 1 hour
+        const elapsed = Date.now() - meta.uploadedAt;
+        if (elapsed > EXPIRATION_TIME) {
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
             }
+            if (fs.existsSync(metaPath)) {
+                fs.unlinkSync(metaPath);
+            }
+            console.log(
+                `[Auto-Clean] Successfully purged expired file ${id} (elapsed: ${Math.round(
+                    elapsed / 60000
+                )} minutes)`
+            );
+            return true; // Was expired and cleaned up
         }
     } catch (err) {
         console.error(`Error checking/cleaning file ${id}:`, err);
@@ -92,7 +90,6 @@ router.post(
             const fileName = (req.query.name as string) || "unnamed_file";
             const fileType =
                 (req.query.type as string) || "application/octet-stream";
-            const deleteAfterDownload = req.query.deleteAfterDownload === "true";
             const body = req.body;
 
             if (!body || body.length === 0) {
@@ -118,7 +115,7 @@ router.post(
                 size: body.length,
                 uploadedAt: Date.now(),
                 downloadsCount: 0,
-                deleteAfterDownload,
+                deleteAfterDownload: true,
             };
 
             fs.writeFileSync(metaPath, JSON.stringify(metadata, null, 2));

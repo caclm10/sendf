@@ -92,7 +92,6 @@ function Dropzone() {
 
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [deleteAfterDownload, setDeleteAfterDownload] = useState(false);
 
     // Clipboard and QR code states
     const [copied, setCopied] = useState(false);
@@ -151,7 +150,7 @@ function Dropzone() {
         setUploadError(null);
 
         const xhr = new XMLHttpRequest();
-        const url = `/api/upload?name=${encodeURIComponent(selectedFile.name)}&type=${encodeURIComponent(selectedFile.type)}&deleteAfterDownload=${deleteAfterDownload}`;
+        const url = `/api/upload?name=${encodeURIComponent(selectedFile.name)}&type=${encodeURIComponent(selectedFile.type)}`;
 
         xhr.open("POST", url, true);
         xhr.setRequestHeader("Content-Type", "application/octet-stream");
@@ -250,7 +249,6 @@ function Dropzone() {
         setUploadProgress(0);
         setUploadError(null);
         setUploadedMeta(null);
-        setDeleteAfterDownload(false);
         setShowDeleteConfirm(false);
         setDeleteError(null);
         if (inputRef.current) {
@@ -362,30 +360,6 @@ function Dropzone() {
                                         </p>
                                     </div>
                                 </div>
-
-                                {/* Self-destruct selection option */}
-                                {!isUploading && (
-                                    <div className="mb-4 pt-3 border-t border-border flex items-start gap-2.5 text-left">
-                                        <input
-                                            id="delete-on-download-checkbox"
-                                            type="checkbox"
-                                            checked={deleteAfterDownload}
-                                            onChange={(e) =>
-                                                setDeleteAfterDownload(e.target.checked)
-                                            }
-                                            className="mt-0.5 h-4 w-4 rounded border-input text-primary focus:ring-primary/30 accent-primary cursor-pointer shrink-0"
-                                        />
-                                        <label
-                                            htmlFor="delete-on-download-checkbox"
-                                            className="text-xs font-medium text-foreground select-none cursor-pointer"
-                                        >
-                                            Auto-delete after first download
-                                            <span className="block text-[10px] text-muted-foreground font-normal mt-0.5 leading-relaxed">
-                                                The file will be permanently deleted from the server after it is downloaded for the first time.
-                                            </span>
-                                        </label>
-                                    </div>
-                                )}
 
                                 {/* Progress or Upload trigger */}
                                 {isUploading ? (
