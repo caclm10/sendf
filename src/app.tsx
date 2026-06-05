@@ -101,7 +101,7 @@ const getFileIcon = (mimeType: string) => {
 };
 
 function App() {
-    const [viewMode, setViewMode] = useState<"upload" | "download">("upload");
+    const [viewMode, setViewMode] = useState<"upload" | "download" | "404">("upload");
     const [activeFileId, setActiveFileId] = useState<string | null>(null);
 
     // Download flow states
@@ -166,8 +166,12 @@ function App() {
         const path = window.location.pathname;
         const pathSegments = path.split("/").filter(Boolean);
 
-        // Matches 6-char alphanumeric or legacy 12-char hex fileId
-        if (
+        if (pathSegments.length === 0) {
+            setActiveFileId(null);
+            setDownloadMeta(null);
+            setMetaError(null);
+            setViewMode("upload");
+        } else if (
             pathSegments.length === 1 &&
             /^([0-9a-z]{6}|[0-9a-z]{12})$/i.test(pathSegments[0])
         ) {
@@ -179,7 +183,7 @@ function App() {
             setActiveFileId(null);
             setDownloadMeta(null);
             setMetaError(null);
-            setViewMode("upload");
+            setViewMode("404");
         }
     };
 
@@ -341,12 +345,18 @@ function App() {
                 <Card className="shadow-md border-border/80">
                     <CardHeader className="pb-4">
                         <CardTitle className="text-xl font-bold">
-                            {viewMode === "upload" ? "Upload File" : "Download File"}
+                            {viewMode === "upload"
+                                ? "Upload File"
+                                : viewMode === "download"
+                                ? "Download File"
+                                : "Halaman Tidak Ditemukan"}
                         </CardTitle>
                         <CardDescription className="text-xs">
                             {viewMode === "upload"
                                 ? "Select or drag your file to the area below to get started."
-                                : "Details of the secure file shared with you."}
+                                : viewMode === "download"
+                                ? "Details of the secure file shared with you."
+                                : "Tautan yang Anda tuju tidak valid atau telah kedaluwarsa."}
                         </CardDescription>
                     </CardHeader>
 
@@ -363,7 +373,7 @@ function App() {
                                 >
                                     <Dropzone />
                                 </motion.div>
-                            ) : (
+                            ) : viewMode === "download" ? (
                                 /* Recipient Download Mode */
                                 <motion.div
                                     key="download-view"
@@ -555,6 +565,32 @@ function App() {
                                             </div>
                                         )
                                     )}
+                                </motion.div>
+                            ) : (
+                                /* 404 Not Found View */
+                                <motion.div
+                                    key="404-view"
+                                    initial={{ opacity: 0, y: 5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -5 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="text-center py-8"
+                                >
+                                    <div className="w-16 h-16 bg-destructive/10 border border-destructive/20 rounded-full flex items-center justify-center text-destructive mx-auto mb-4 animate-bounce">
+                                        <AlertCircle className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-foreground mb-2">
+                                        404 - Halaman Tidak Ditemukan
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-6 leading-relaxed">
+                                        Tautan yang Anda tuju salah, telah dihapus oleh pengirim, atau sudah kedaluwarsa setelah 1 jam.
+                                    </p>
+                                    <button
+                                        onClick={() => navigateTo("/")}
+                                        className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-sm cursor-pointer"
+                                    >
+                                        Kembali ke Beranda
+                                    </button>
                                 </motion.div>
                             )}
                         </AnimatePresence>
