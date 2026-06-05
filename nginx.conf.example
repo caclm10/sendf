@@ -1,60 +1,27 @@
 # =========================================================================
-# CONTOH KONFIGURASI NGINX UNTUK PRODUCTION (sendf)
+# TEMPLATE KONFIGURASI NGINX UNTUK PRODUCTION (sendf)
 # =========================================================================
-# Salin file ini ke server Anda, biasanya di:
-# /etc/nginx/sites-available/sendf
-# Kemudian aktifkan dengan:
-# ln -s /etc/nginx/sites-available/sendf /etc/nginx/sites-enabled/
+# Pilih salah satu opsi di bawah ini yang sesuai dengan infrastruktur Anda.
+# Salin file ini ke server Anda, biasanya di: /etc/nginx/sites-available/sendf
 # =========================================================================
 
-# HTTP: Redirect otomatis dari HTTP ke HTTPS
+# -------------------------------------------------------------------------
+# OPSI A: MENGGUNAKAN CLOUDFLARE (Rekomendasi - Lebih Sederhana & Aman)
+# -------------------------------------------------------------------------
+# Gunakan konfigurasi ini jika domain Anda diarahkan ke Cloudflare (Awan Oranye aktif).
+# Cloudflare akan menangani SSL (HTTPS), dan Nginx di VPS hanya mendengar port 80.
+# Di Cloudflare, atur mode SSL/TLS ke "Flexible".
+
 server {
     listen 80;
     listen [::]:80;
-    server_name sendf.domainanda.com; # Ganti dengan domain produksi Anda
+    server_name sendf.domainanda.com; # Ganti dengan domain Anda
 
-    # Jalur verifikasi SSL Let's Encrypt (Certbot)
-    location /.well-known/acme-challenge/ {
-        root /var/www/html;
-    }
-
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-
-# HTTPS: Konfigurasi utama dengan SSL
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name sendf.domainanda.com; # Ganti dengan domain produksi Anda
-
-    # =========================================================================
-    # CONFIGURASI SSL (Ganti path sesuai letak sertifikat SSL Anda)
-    # =========================================================================
-    ssl_certificate /etc/letsencrypt/live/sendf.domainanda.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/sendf.domainanda.com/privkey.pem;
-    
-    # SSL Best Practices
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384';
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_timeout 1d;
-    ssl_session_tickets off;
-
-    # =========================================================================
-    # BATAS UKURAN UPLOAD FILE (SANGAT PENTING!)
-    # =========================================================================
-    # Samakan nilai ini dengan batas ukuran upload yang ada pada backend Express (200MB)
+    # Batas ukuran upload file (samakan dengan batas Express 200MB)
     client_max_body_size 200M;
 
-    # =========================================================================
-    # PROXY PASS KE CONTAINER DOCKER
-    # =========================================================================
     location / {
         # Mengarahkan trafik ke Docker Container port 5000
-        # Jika Docker Compose dijalankan di server yang sama, gunakan http://127.0.0.1:5000
         proxy_pass http://127.0.0.1:5000;
         
         proxy_http_version 1.1;
@@ -63,14 +30,69 @@ server {
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
         
-        # Meneruskan info IP asli Client untuk kebutuhan log aplikasi
-        proxy_set_header X-Real-IP $remote_addr;
+        # Meneruskan IP asli dari Cloudflare ke aplikasi Node.js
+        proxy_set_header X-Real-IP $http_cf_connecting_ip;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # Timeout saat upload file berukuran besar
+        # Timeout saat upload file besar
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
         proxy_read_timeout 300s;
     }
 }
+
+
+# -------------------------------------------------------------------------
+# OPSI B: TANPA CLOUDFLARE (SSL Diurus Sendiri oleh VPS / Certbot)
+# -------------------------------------------------------------------------
+# Gunakan konfigurasi ini jika domain Anda langsung mengarah ke IP VPS (tanpa Cloudflare).
+# Anda wajib memasang sertifikat SSL Let's Encrypt (Certbot) sendiri.
+# Hapus tanda pagar (#) jika Anda ingin mengaktifkan opsi ini.
+
+# server {
+#     listen 80;
+#     listen [::]:80;
+#     server_name sendf.domainanda.com;
+# 
+#     # Jalur verifikasi SSL Let's Encrypt
+#     location /.well-known/acme-challenge/ {
+#         root /var/www/html;
+#     }
+# 
+#     location / {
+#         return 301 https://$host$request_uri;
+#     }
+# }
+# 
+# server {
+#     listen 443 ssl http2;
+#     listen [::]:443 ssl http2;
+#     server_name sendf.domainanda.com;
+# 
+#     # Path Sertifikat SSL Let's Encrypt (Certbot otomatis mengaturnya)
+#     ssl_certificate /etc/letsencrypt/live/sendf.domainanda.com/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/sendf.domainanda.com/privkey.pem;
+#     
+#     ssl_protocols TLSv1.2 TLSv1.3;
+#     ssl_prefer_server_ciphers on;
+# 
+#     client_max_body_size 200M;
+# 
+#     location / {
+#         proxy_pass http://127.0.0.1:5000;
+#         proxy_http_version 1.1;
+#         proxy_set_header Upgrade $http_upgrade;
+#         proxy_set_header Connection 'upgrade';
+#         proxy_set_header Host $host;
+#         proxy_cache_bypass $http_upgrade;
+#         
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+# 
+#         proxy_connect_timeout 300s;
+#         proxy_send_timeout 300s;
+#         proxy_read_timeout 300s;
+#     }
+# }
