@@ -1,41 +1,51 @@
+# Definisi versi Node secara global agar seragam di semua stage
+ARG NODE_VERSION=20-alpine
+
+# =========================================================================
 # Stage 1: Build the application
-FROM node:20-alpine AS builder
+# =========================================================================
+FROM node:${NODE_VERSION} AS builder
 
-WORKDIR /app
+ARG WORK_DIR=/app
+WORKDIR ${WORK_DIR}
 
-# Copy package files
+# Salin berkas dependency
 COPY package*.json ./
 
-# Install all dependencies (including devDependencies) for building
+# Instal semua dependency untuk build
 RUN npm ci
 
-# Copy the rest of the application files
+# Salin source code
 COPY . .
 
-# Build both client (Vite) and server (esbuild)
+# Lakukan build
 RUN npm run build
 
-# Stage 2: Production image
-FROM node:20-alpine AS runner
 
-WORKDIR /app
+# =========================================================================
+# Stage 2: Production runner
+# =========================================================================
+FROM node:${NODE_VERSION} AS runner
 
-# Set production environment
-ENV NODE_ENV=production
+ARG WORK_DIR=/app
+WORKDIR ${WORK_DIR}
+
+# Definisikan Port dan Environment secara runtime
 ENV PORT=5000
+ENV NODE_ENV=production
 
-# Create uploads directory and set permissions to the non-root 'node' user
-RUN mkdir -p /app/uploads && chown -R node:node /app
+# Buat folder uploads dan atur izin akses untuk user 'node'
+RUN mkdir -p ${WORK_DIR}/uploads && chown -R node:node ${WORK_DIR}
 
-# Copy the built output from the builder stage (contains dist/ assets + server.cjs)
-COPY --chown=node:node --from=builder /app/dist ./dist
-COPY --chown=node:node --from=builder /app/package.json ./package.json
+# Salin hasil kompilasi dari stage builder menggunakan variabel direktori kerja
+COPY --chown=node:node --from=builder ${WORK_DIR}/dist ./dist
+COPY --chown=node:node --from=builder ${WORK_DIR}/package.json ./package.json
 
-# Expose the port the app runs on
-EXPOSE 5000
+# Docker otomatis mengekspos port sesuai variabel ENV PORT
+EXPOSE ${PORT}
 
-# Use non-root user for security
+# Gunakan non-root user untuk alasan keamanan
 USER node
 
-# Start the application
+# Jalankan aplikasi
 CMD ["node", "dist/server.cjs"]
